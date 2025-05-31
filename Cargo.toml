@@ -1,0 +1,28 @@
+[workspace]
+resolver = "2"
+members = ["crates/*"]
+
+[workspace.package]
+version = "0.1.0"
+authors = ["Teoh Han Hui <teohhanhui@gmail.com>"]
+edition = "2021"
+rust-version = "1.83.0"
+description = "Client implementation of the Mercure protocol"
+repository = "https://github.com/teohhanhui/mercure-rs"
+license = "MIT OR Apache-2.0"
+keywords = ["mercure", "sse", "eventsource", "pubsub"]
+categories = ["web-programming::http-client", "api-bindings", "asynchronous"]
+
+[workspace.dependencies]
+anyhow = { version = "1.0.93", default-features = false }
+biscuit = { version = "0.7.0", default-features = false }
+reqwest = { version = "0.12.16", default-features = false }
+secrecy = { version = "0.10.3", default-features = false }
+serde = { version = "1.0.217", default-features = false }
+serde_html_form = { version = "0.2.7", default-features = false }
+uri-template-system = { version = "0.1.5", default-features = false }
+url = { version = "2.5.4", default-features = false }
+
+[workspace.lints.clippy]
+arithmetic_side_effects = "warn"
+unused_trait_names = "warn"

@@ -1,0 +1,29 @@
+[package]
+name = "mercure"
+version = { workspace = true }
+authors = { workspace = true }
+edition = { workspace = true }
+rust-version = { workspace = true }
+description = { workspace = true }
+repository = { workspace = true }
+license = { workspace = true }
+keywords = { workspace = true }
+categories = { workspace = true }
+
+[dependencies]
+biscuit = { workspace = true, features = [] }
+reqwest = { workspace = true, features = [] }
+secrecy = { workspace = true, features = [] }
+serde = { workspace = true, features = ["derive", "std"] }
+serde_html_form = { workspace = true, features = [] }
+uri-template-system = { workspace = true, features = [] }
+url = { workspace = true, features = ["serde", "std"] }
+
+[dev-dependencies]
+anyhow = { workspace = true, features = ["std"] }
+
+[features]
+default = []
+
+[lints]
+workspace = true
