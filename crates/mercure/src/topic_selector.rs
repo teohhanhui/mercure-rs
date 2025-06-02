@@ -11,33 +11,45 @@ use uri_template_system::Template;
 /// > for authorization purposes.
 #[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Deserialize, Serialize)]
 pub enum TopicSelector {
-    /// Matches all topics.
+    /// A topic selector which matches all topics.
     #[serde(rename = "*")]
     Wildcard,
-    /// Matches by a URI Template.
+    /// A topic selector which matches by a [URI Template].
+    ///
+    /// [URI Template]: https://datatracker.ietf.org/doc/html/rfc6570
     ///
     /// # Note
     ///
-    /// You should use a URI Template in absolute form[^note], which expands to
+    /// You should use a [URI Template] in absolute form[^abs], which expands to
     /// a valid [URL].
     ///
+    /// This constraint cannot be checked due to the flexibility of [URI
+    /// Template], but is important for interoperability.
+    ///
+    /// [URI Template]: https://datatracker.ietf.org/doc/html/rfc6570
     /// [URL]: https://url.spec.whatwg.org/
     ///
-    /// [^note]: <https://github.com/dunglas/mercure/issues/947#issuecomment-2324959856>
+    /// [^abs]: <https://github.com/dunglas/mercure/issues/947#issuecomment-2324959856>
     #[serde(untagged)]
     UriTemplate(UriTemplate),
 }
 
-/// [RFC6570](https://datatracker.ietf.org/doc/html/rfc6570)
+/// A [URI Template].
+///
+/// [URI Template]: https://datatracker.ietf.org/doc/html/rfc6570
 ///
 /// # Note
 ///
-/// You should use a URI Template in absolute form[^note], which expands to a
+/// You should use a [URI Template] in absolute form[^abs], which expands to a
 /// valid [URL].
 ///
+/// This constraint cannot be checked due to the flexibility of [URI Template],
+/// but is important for interoperability.
+///
+/// [URI Template]: https://datatracker.ietf.org/doc/html/rfc6570
 /// [URL]: https://url.spec.whatwg.org/
 ///
-/// [^note]: <https://github.com/dunglas/mercure/issues/947#issuecomment-2324959856>
+/// [^abs]: <https://github.com/dunglas/mercure/issues/947#issuecomment-2324959856>
 #[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Deserialize, Serialize)]
 #[serde(transparent)]
 pub struct UriTemplate(String);
@@ -65,12 +77,16 @@ impl<'a> TryFrom<&'a str> for UriTemplate {
     ///
     /// # Note
     ///
-    /// You should use a URI Template in absolute form[^note], which expands to
+    /// You should use a [URI Template] in absolute form[^abs], which expands to
     /// a valid [URL].
     ///
+    /// This constraint cannot be checked due to the flexibility of [URI
+    /// Template], but is important for interoperability.
+    ///
+    /// [URI Template]: https://datatracker.ietf.org/doc/html/rfc6570
     /// [URL]: https://url.spec.whatwg.org/
     ///
-    /// [^note]: <https://github.com/dunglas/mercure/issues/947#issuecomment-2324959856>
+    /// [^abs]: <https://github.com/dunglas/mercure/issues/947#issuecomment-2324959856>
     fn try_from(s: &'a str) -> Result<Self, Self::Error> {
         let _template = Template::parse(s).map_err(|err| Self::Error { inner: err })?;
 

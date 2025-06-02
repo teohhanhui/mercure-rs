@@ -9,6 +9,45 @@ use serde::{Deserialize, Serialize};
 
 use crate::topic_selector::TopicSelector;
 
+/// [RFC 7518, Section 3.2](https://datatracker.ietf.org/doc/html/rfc7518#section-3.2)
+///
+/// > A key of the same size as the hash output (for instance, 256 bits for
+/// > "HS256") or larger MUST be used with this algorithm. (This requirement is
+/// > based on Section 5.3.4 (Security Effect of the HMAC Key) of NIST SP
+/// > 800-117 [[NIST.800-107]], which states that the effective security
+/// > strength is the minimum of the security strength of the key and two times
+/// > the size of the internal hash value.)
+///
+/// [NIST.800-107]: http://csrc.nist.gov/publications/nistpubs/800-107-rev1/sp800-107-rev1.pdf
+pub const HS256_SECRET_KEY_LEN: usize = 64;
+
+/// A publisher [JWT] access token.
+///
+/// [JWT]: https://datatracker.ietf.org/doc/html/rfc7519
+#[derive(Clone, Eq, PartialEq, Debug, Deserialize, Serialize)]
+#[serde(transparent)]
+pub struct PublisherJwt(JWT<MercureJwtClaims, biscuit::Empty>);
+
+/// The [HMAC] secret key used to sign publisher [JWT] access tokens.
+///
+/// [HMAC]: https://datatracker.ietf.org/doc/html/rfc2104
+/// [JWT]: https://datatracker.ietf.org/doc/html/rfc7519
+///
+/// # Note
+///
+/// It is recommended to use a key with a minimum length of
+/// [`HS256_SECRET_KEY_LEN`] bytes.
+///
+/// [RFC 7518, Section 3.2](https://datatracker.ietf.org/doc/html/rfc7518#section-3.2)
+///
+/// > A key of the same size as the hash output (for instance, 256 bits for
+/// > "HS256") or larger MUST be used with this algorithm. (This requirement is
+/// > based on Section 5.3.4 (Security Effect of the HMAC Key) of NIST SP
+/// > 800-117 [[NIST.800-107]], which states that the effective security
+/// > strength is the minimum of the security strength of the key and two times
+/// > the size of the internal hash value.)
+///
+/// [NIST.800-107]: http://csrc.nist.gov/publications/nistpubs/800-107-rev1/sp800-107-rev1.pdf
 #[derive(Clone)]
 pub struct PublisherJwtSecret(SecretSlice<u8>);
 
@@ -20,6 +59,7 @@ pub struct PublisherJwtError {
     inner: Box<dyn Error + Send + Sync + 'static>,
 }
 
+/// The various types of errors that can cause [`PublisherJwt::new`] to fail.
 #[derive(Debug)]
 #[non_exhaustive]
 pub enum PublisherJwtErrorKind {
@@ -27,16 +67,42 @@ pub enum PublisherJwtErrorKind {
     EncodeAndSign,
 }
 
-/// A publisher [JWT] access token.
+/// A subscriber [JWT] access token.
 ///
 /// [JWT]: https://datatracker.ietf.org/doc/html/rfc7519
 #[derive(Clone, Eq, PartialEq, Debug, Deserialize, Serialize)]
 #[serde(transparent)]
-pub struct PublisherJwt(JWT<MercureJwtClaims, biscuit::Empty>);
+pub struct SubscriberJwt(JWT<MercureJwtClaims, biscuit::Empty>);
 
+/// The [HMAC] secret key used to sign subscriber [JWT] access tokens.
+///
+/// [HMAC]: https://datatracker.ietf.org/doc/html/rfc2104
+/// [JWT]: https://datatracker.ietf.org/doc/html/rfc7519
+///
+/// # Note
+///
+/// It is recommended to use a key with a minimum length of
+/// [`HS256_SECRET_KEY_LEN`] bytes.
+///
+/// [RFC 7518, Section 3.2](https://datatracker.ietf.org/doc/html/rfc7518#section-3.2)
+///
+/// > A key of the same size as the hash output (for instance, 256 bits for
+/// > "HS256") or larger MUST be used with this algorithm. (This requirement is
+/// > based on Section 5.3.4 (Security Effect of the HMAC Key) of NIST SP
+/// > 800-117 [[NIST.800-107]], which states that the effective security
+/// > strength is the minimum of the security strength of the key and two times
+/// > the size of the internal hash value.)
+///
+/// [NIST.800-107]: http://csrc.nist.gov/publications/nistpubs/800-107-rev1/sp800-107-rev1.pdf
 #[derive(Clone)]
 pub struct SubscriberJwtSecret(SecretSlice<u8>);
 
+/// The max-age used to calculate and set the "exp"[^exp] claim in the
+/// subscriber [JWT] access token.
+///
+/// [JWT]: https://datatracker.ietf.org/doc/html/rfc7519
+///
+/// [^exp]: <https://datatracker.ietf.org/doc/html/rfc7519#section-4.1.4>
 #[derive(Copy, Clone, Debug)]
 pub struct SubscriberJwtMaxAge(std::time::Duration);
 
@@ -48,11 +114,14 @@ pub struct TryFromDurationError {
     kind: TryFromDurationErrorKind,
 }
 
+/// The various types of errors that can cause converting from
+/// [`std::time::Duration`] to [`SubscriberJwtMaxAge`] to fail.
 #[derive(Debug)]
 #[non_exhaustive]
 pub enum TryFromDurationErrorKind {
-    /// Subscriber JWT max-age must not be more than
-    /// [`MAX_AGE_LIMIT`](crate::cookie::MAX_AGE_LIMIT).
+    /// Subscriber JWT max-age must not be more than [`MAX_AGE_LIMIT`].
+    ///
+    /// [`MAX_AGE_LIMIT`]: crate::cookie::MAX_AGE_LIMIT
     CookieLifetimeLimitExceeded,
 }
 
@@ -64,19 +133,13 @@ pub struct SubscriberJwtError {
     inner: Box<dyn Error + Send + Sync + 'static>,
 }
 
+/// The various types of errors that can cause [`SubscriberJwt::new`] to fail.
 #[derive(Debug)]
 #[non_exhaustive]
 pub enum SubscriberJwtErrorKind {
     /// Failed to encode and sign subscriber JWT.
     EncodeAndSign,
 }
-
-/// A subscriber [JWT] access token.
-///
-/// [JWT]: https://datatracker.ietf.org/doc/html/rfc7519
-#[derive(Clone, Eq, PartialEq, Debug, Deserialize, Serialize)]
-#[serde(transparent)]
-pub struct SubscriberJwt(JWT<MercureJwtClaims, biscuit::Empty>);
 
 #[derive(Clone, Eq, PartialEq, Debug, Deserialize, Serialize)]
 struct MercureJwtClaims {
@@ -101,42 +164,6 @@ struct MercureClaim {
     subscribe: Option<Vec<TopicSelector>>,
 }
 
-impl From<Vec<u8>> for PublisherJwtSecret {
-    fn from(vec: Vec<u8>) -> Self {
-        Self(SecretSlice::from(vec))
-    }
-}
-
-impl fmt::Display for PublisherJwtError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self.kind {
-            PublisherJwtErrorKind::EncodeAndSign => {
-                let err = self.inner.downcast_ref::<biscuit::errors::Error>().unwrap();
-                write!(f, "failed to encode and sign JWT: {err}")
-            },
-        }
-    }
-}
-
-impl Error for PublisherJwtError {
-    fn source(&self) -> Option<&(dyn Error + 'static)> {
-        match self.kind {
-            PublisherJwtErrorKind::EncodeAndSign => {
-                let err = self.inner.downcast_ref::<biscuit::errors::Error>().unwrap();
-                Some(err)
-            },
-        }
-    }
-}
-
-impl PublisherJwtError {
-    /// Returns the corresponding [`PublisherJwtErrorKind`] for this error.
-    #[must_use]
-    pub const fn kind(&self) -> &PublisherJwtErrorKind {
-        &self.kind
-    }
-}
-
 impl fmt::Display for PublisherJwt {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let jwt = self
@@ -149,6 +176,22 @@ impl fmt::Display for PublisherJwt {
 
 impl PublisherJwt {
     /// Constructs a new `PublisherJwt`.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// # use std::error::Error;
+    /// #
+    /// use mercure::jwt::PublisherJwtSecret;
+    /// use mercure::{PublisherJwt, TopicSelector};
+    ///
+    /// # fn main() -> Result<(), Box<dyn Error>> {
+    /// let publisher_jwt_secret =
+    ///     PublisherJwtSecret::from(b"!ChangeThisMercureHubJWTSecretKey!".to_vec());
+    /// let publisher_jwt = PublisherJwt::new(&publisher_jwt_secret, vec![TopicSelector::Wildcard])?;
+    /// # Ok(())
+    /// # }
+    /// ```
     pub fn new(
         publisher_jwt_secret: &PublisherJwtSecret,
         topic_selectors: Vec<TopicSelector>,
@@ -188,63 +231,16 @@ impl PublisherJwt {
     }
 }
 
-impl From<Vec<u8>> for SubscriberJwtSecret {
+impl From<Vec<u8>> for PublisherJwtSecret {
     fn from(vec: Vec<u8>) -> Self {
         Self(SecretSlice::from(vec))
     }
 }
 
-impl TryFrom<std::time::Duration> for SubscriberJwtMaxAge {
-    type Error = TryFromDurationError;
-
-    fn try_from(duration: std::time::Duration) -> Result<Self, Self::Error> {
-        if duration > crate::cookie::MAX_AGE_LIMIT {
-            return Err(Self::Error {
-                kind: TryFromDurationErrorKind::CookieLifetimeLimitExceeded,
-            })?;
-        }
-
-        Ok(Self(duration))
-    }
-}
-
-impl From<SubscriberJwtMaxAge> for std::time::Duration {
-    fn from(subscriber_jwt_max_age: SubscriberJwtMaxAge) -> Self {
-        subscriber_jwt_max_age.0
-    }
-}
-
-impl SubscriberJwtMaxAge {
-    pub const MAX: Self = Self(crate::cookie::MAX_AGE_LIMIT);
-}
-
-impl fmt::Display for TryFromDurationError {
+impl fmt::Display for PublisherJwtError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self.kind {
-            TryFromDurationErrorKind::CookieLifetimeLimitExceeded => {
-                /// `LIMIT` should be synced with
-                /// [`MAX_AGE_LIMIT`](crate::cookie::MAX_AGE_LIMIT)
-                const LIMIT: &str = "400 days";
-                write!(f, "max age must not be more than {LIMIT}")
-            },
-        }
-    }
-}
-
-impl Error for TryFromDurationError {}
-
-impl TryFromDurationError {
-    /// Returns the corresponding [`TryFromDurationErrorKind`] for this error.
-    #[must_use]
-    pub const fn kind(&self) -> &TryFromDurationErrorKind {
-        &self.kind
-    }
-}
-
-impl fmt::Display for SubscriberJwtError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self.kind {
-            SubscriberJwtErrorKind::EncodeAndSign => {
+            PublisherJwtErrorKind::EncodeAndSign => {
                 let err = self.inner.downcast_ref::<biscuit::errors::Error>().unwrap();
                 write!(f, "failed to encode and sign JWT: {err}")
             },
@@ -252,10 +248,10 @@ impl fmt::Display for SubscriberJwtError {
     }
 }
 
-impl Error for SubscriberJwtError {
+impl Error for PublisherJwtError {
     fn source(&self) -> Option<&(dyn Error + 'static)> {
         match self.kind {
-            SubscriberJwtErrorKind::EncodeAndSign => {
+            PublisherJwtErrorKind::EncodeAndSign => {
                 let err = self.inner.downcast_ref::<biscuit::errors::Error>().unwrap();
                 Some(err)
             },
@@ -263,10 +259,10 @@ impl Error for SubscriberJwtError {
     }
 }
 
-impl SubscriberJwtError {
-    /// Returns the corresponding [`SubscriberJwtErrorKind`] for this error.
+impl PublisherJwtError {
+    /// Returns the corresponding [`PublisherJwtErrorKind`] for this error.
     #[must_use]
-    pub const fn kind(&self) -> &SubscriberJwtErrorKind {
+    pub const fn kind(&self) -> &PublisherJwtErrorKind {
         &self.kind
     }
 }
@@ -297,6 +293,24 @@ impl SubscriberJwt {
     ///
     /// > revoking JWSs before their expiration is often difficult. To that end,
     /// > using short-lived tokens is strongly RECOMMENDED.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// # use std::error::Error;
+    /// #
+    /// use mercure::jwt::SubscriberJwtSecret;
+    /// use mercure::{SubscriberJwt, TopicSelector};
+    ///
+    /// # fn main() -> Result<(), Box<dyn Error>> {
+    /// let subscriber_jwt_secret =
+    ///     SubscriberJwtSecret::from(b"!ChangeThisMercureHubJWTSecretKey!".to_vec());
+    /// let subscriber_jwt = SubscriberJwt::new(&subscriber_jwt_secret, None, vec![
+    ///     TopicSelector::UriTemplate("https://example.com/users/1/books/{book_id}".try_into()?),
+    /// ])?;
+    /// # Ok(())
+    /// # }
+    /// ```
     pub fn new(
         subscriber_jwt_secret: &SubscriberJwtSecret,
         subscriber_jwt_max_age: Option<SubscriberJwtMaxAge>,
@@ -351,6 +365,88 @@ impl SubscriberJwt {
     }
 }
 
+impl From<Vec<u8>> for SubscriberJwtSecret {
+    fn from(vec: Vec<u8>) -> Self {
+        Self(SecretSlice::from(vec))
+    }
+}
+
+impl TryFrom<std::time::Duration> for SubscriberJwtMaxAge {
+    type Error = TryFromDurationError;
+
+    fn try_from(duration: std::time::Duration) -> Result<Self, Self::Error> {
+        if duration > crate::cookie::MAX_AGE_LIMIT {
+            return Err(Self::Error {
+                kind: TryFromDurationErrorKind::CookieLifetimeLimitExceeded,
+            })?;
+        }
+
+        Ok(Self(duration))
+    }
+}
+
+impl From<SubscriberJwtMaxAge> for std::time::Duration {
+    fn from(subscriber_jwt_max_age: SubscriberJwtMaxAge) -> Self {
+        subscriber_jwt_max_age.0
+    }
+}
+
+impl SubscriberJwtMaxAge {
+    pub const MAX: Self = Self(crate::cookie::MAX_AGE_LIMIT);
+}
+
+impl fmt::Display for TryFromDurationError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self.kind {
+            TryFromDurationErrorKind::CookieLifetimeLimitExceeded => {
+                const SECONDS_IN_DAYS: u64 = 60 * 60 * 24;
+                const LIMIT_DAYS: u64 = crate::cookie::MAX_AGE_LIMIT.as_secs() / SECONDS_IN_DAYS;
+                write!(f, "max-age must not be more than {LIMIT_DAYS} days")
+            },
+        }
+    }
+}
+
+impl Error for TryFromDurationError {}
+
+impl TryFromDurationError {
+    /// Returns the corresponding [`TryFromDurationErrorKind`] for this error.
+    #[must_use]
+    pub const fn kind(&self) -> &TryFromDurationErrorKind {
+        &self.kind
+    }
+}
+
+impl fmt::Display for SubscriberJwtError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self.kind {
+            SubscriberJwtErrorKind::EncodeAndSign => {
+                let err = self.inner.downcast_ref::<biscuit::errors::Error>().unwrap();
+                write!(f, "failed to encode and sign JWT: {err}")
+            },
+        }
+    }
+}
+
+impl Error for SubscriberJwtError {
+    fn source(&self) -> Option<&(dyn Error + 'static)> {
+        match self.kind {
+            SubscriberJwtErrorKind::EncodeAndSign => {
+                let err = self.inner.downcast_ref::<biscuit::errors::Error>().unwrap();
+                Some(err)
+            },
+        }
+    }
+}
+
+impl SubscriberJwtError {
+    /// Returns the corresponding [`SubscriberJwtErrorKind`] for this error.
+    #[must_use]
+    pub const fn kind(&self) -> &SubscriberJwtErrorKind {
+        &self.kind
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use anyhow::{Context as _, Result};
@@ -378,7 +474,7 @@ mod tests {
             PublisherJwtSecret::from(b"!ChangeThisMercureHubJWTSecretKey!".to_vec());
         let publisher_jwt =
             PublisherJwt::new(&publisher_jwt_secret, vec![TopicSelector::UriTemplate(
-                "https://example.com/books/{book_id}".try_into().unwrap(),
+                "https://example.com/books/{book_id}".try_into()?,
             )])?;
         let publisher_jwt = publisher_jwt.0.encoded().context("JWT is not encoded")?;
         assert_eq!(
@@ -410,18 +506,14 @@ mod tests {
         let subscriber_jwt_secret =
             SubscriberJwtSecret::from(b"!ChangeThisMercureHubJWTSecretKey!".to_vec());
         let subscriber_jwt = SubscriberJwt::new(&subscriber_jwt_secret, None, vec![
-            TopicSelector::UriTemplate(
-                "https://example.com/users/{user_id}/books/{book_id}"
-                    .try_into()
-                    .unwrap(),
-            ),
+            TopicSelector::UriTemplate("https://example.com/users/1/books/{book_id}".try_into()?),
         ])?;
         let subscriber_jwt = subscriber_jwt.0.encoded().context("JWT is not encoded")?;
         assert_eq!(
             subscriber_jwt.to_string(),
             "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.\
-             eyJtZXJjdXJlIjp7InN1YnNjcmliZSI6WyJodHRwczovL2V4YW1wbGUuY29tL3VzZXJzL3t1c2VyX2lkfS9ib29rcy97Ym9va19pZH0iXX19.\
-             U0qs1ggrkGDfMDJ9LzuY_9BEExNUU5KSu71B4-eQcko"
+             eyJtZXJjdXJlIjp7InN1YnNjcmliZSI6WyJodHRwczovL2V4YW1wbGUuY29tL3VzZXJzLzEvYm9va3Mve2Jvb2tfaWR9Il19fQ.\
+             8ctfXioRle93VxIwoCxikZtTBBSGrL_WtkXrS5wVPDY"
         );
         Ok(())
     }

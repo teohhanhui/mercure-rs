@@ -16,10 +16,16 @@ pub struct Topic {
     alternate_urls: Vec<Url>,
 }
 
+/// An iterator over the URL(s) of a [`Topic`], created by [`iter`].
+///
+/// [`iter`]: Topic::iter
 #[derive(Clone, Debug)]
 #[must_use = "iterators are lazy and do nothing unless consumed"]
 pub struct Iter<'a>(Chain<iter::Once<&'a Url>, std::slice::Iter<'a, Url>>);
 
+/// An owning iterator over the URL(s) of a [`Topic`], created by [`into_iter`].
+///
+/// [`into_iter`]: Topic::into_iter
 #[derive(Clone, Debug)]
 #[must_use = "iterators are lazy and do nothing unless consumed"]
 pub struct IntoIter(Chain<iter::Once<Url>, std::vec::IntoIter<Url>>);
@@ -46,8 +52,8 @@ impl IntoIterator for Topic {
     type IntoIter = IntoIter;
     type Item = Url;
 
-    /// Creates a consuming iterator, that is, one that moves each topic URL out
-    /// of the `Topic`. The `Topic` cannot be used after calling this.
+    /// Creates a consuming iterator, that is, one that moves each URL out of
+    /// the `Topic`. The `Topic` cannot be used after calling this.
     fn into_iter(self) -> Self::IntoIter {
         IntoIter(iter::once(self.canonical_url).chain(self.alternate_urls))
     }
@@ -71,7 +77,7 @@ impl Topic {
         }
     }
 
-    /// Returns an iterator over the topic URL(s).
+    /// Returns an iterator over the `Topic`.
     ///
     /// The iterator yields the canonical URL, followed by alternate URLs (if
     /// any).
